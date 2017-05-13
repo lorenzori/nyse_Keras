@@ -24,16 +24,16 @@ def create_model(feats, feats2, lookback, lr=0.001):
 
     branch1.add(LSTM(input_shape=(feats, lookback), output_dim=10, return_sequences=True))
     branch1.add(Dropout(0.2))
-
     branch1.add(LSTM(50, return_sequences=False))
     branch1.add(Dropout(0.2))
+    branch1.add(Dense(10, activation='linear'))
 
     branch2 = Sequential()
     branch2.add(Dense(10, input_shape=(feats2,), init='normal', activation='relu'))
     branch2.add(Dense(10, activation='relu'))
 
     model = Sequential()
-    model.add(Merge([branch1, branch2], mode='concat'))
+    model.add(Merge([branch1, branch2], mode='sum'))
     model.add(Dense(1, init='normal', activation='sigmoid'))
 
 
