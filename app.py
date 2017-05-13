@@ -21,7 +21,8 @@ def get_delay():
     from sklearn.preprocessing import MinMaxScaler, StandardScaler
     from utils import create_dataset
     import numpy as np
-    import matplotlib.pyplot as plt
+    from dateutil.relativedelta import relativedelta
+    import datetime
 
     # load json and create model
     # ==========================
@@ -44,7 +45,6 @@ def get_delay():
 
     # TICKER SELECTION
     # ================
-
     ticker = result['TICKER']
 
     print('TICKER: ', ticker)
@@ -101,7 +101,29 @@ def get_delay():
 
     output.to_csv('scoring_out.csv', index=False)
 
-    return render_template('result.html',prediction='bravo!')
+    # SEND VALUES
+    # ===========
+    OUT_DATE = "{:%Y-%m-%d}".format(datetime.datetime.strptime(result['OUT_DATE'], "%Y-%m-%d")
+                                    + relativedelta(days=1))
+    PREV_DATE = "{:%Y-%m-%d}".format(datetime.datetime.strptime(result['OUT_DATE'], "%Y-%m-%d"))
+
+    prev_value = output[output.date == PREV_DATE]['actual'].values
+    # just over the weekend
+    if prev_value < 1:
+        print('weekend', prev_value)
+        PREV_DATE = "{:%Y-%m-%d}".format(datetime.datetime.strptime(result['OUT_DATE'], "%Y-%m-%d")
+                                         - relativedelta(days=3))
+        prev_value = output[output.date == PREV_DATE]['actual'].values
+
+    app_result = {'OUT_DATE': OUT_DATE}
+    app_result['OUT_VALUE'] = output[output.date == OUT_DATE]['pred']
+    app_result['OUT_DELTA'] = prev_value - \
+                              output[output.date == OUT_DATE]['pred'].values
+
+
+    return render_template('result.html', out_date=app_result['OUT_DATE'],
+                           out_value=app_result['OUT_VALUE'].values,
+                           out_delta=app_result['OUT_DELTA'])
 
 if __name__ == '__main__':
 	app.run()

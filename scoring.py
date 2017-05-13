@@ -27,7 +27,7 @@ other_features = pd.read_csv('prices.csv', header=0)
 
 # TICKER SELECTION
 # ================
-for ticker in ['YHOO', 'JPM', 'WU', 'ACN']:
+for ticker in ['YHOO']: #, 'JPM', 'WU', 'ACN']:
 
     if ticker not in df.symbol.unique():
         print('no ticker {}!'.format(ticker))
@@ -78,6 +78,8 @@ for ticker in ['YHOO', 'JPM', 'WU', 'ACN']:
         output = output.append(ts)
     except NameError:
         output = pd.DataFrame(ts)
+
+    output[output.date == '2016-05-16']
 
 output.to_csv('scoring_out.csv', index=False)
 
