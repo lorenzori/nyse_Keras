@@ -1,24 +1,27 @@
-# this script takes as input some features and predicts the output
 from keras.models import model_from_json
 from keras.optimizers import Adam
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-from utils import create_dataset
+from utils import create_dataset, load_model_from_disk
 import numpy as np
-import matplotlib.pyplot as plt
 
-# load json and create model
-# ==========================
-json_file = open('model.json', 'r')
-loaded_model_json = json_file.read()
-json_file.close()
-loaded_model = model_from_json(loaded_model_json)
-# load weights into new model
-loaded_model.load_weights("model.h5")
-print("Loaded model from disk")
+# PARAMETERS
+# ==========
+tikkkers = ['YHOO', 'JPM', 'WU', 'ACN']         # which ticker to score
+look_back = 5           # LSTM lookback
+lag = 2                 # based on yesterday's prices, predict tomorrow's (no info on today's close)
+learning_rate = 0.0001
 
-A = Adam(lr=0.0001)
-loaded_model.compile(loss='mse', optimizer=A)
+# load network, weights and compile model
+# =======================================
+try:
+    loaded_model = load_model_from_disk(model_from_json)
+    A = Adam(lr=learning_rate)
+    loaded_model.compile(loss='mse', optimizer=A)
+
+except FileNotFoundError:
+    print('no model found!')
+    exit()
 
 # get the data
 # ============
@@ -27,7 +30,7 @@ other_features = pd.read_csv('prices.csv', header=0)
 
 # TICKER SELECTION
 # ================
-for ticker in ['YHOO']: #, 'JPM', 'WU', 'ACN']:
+for ticker in tikkkers:
 
     if ticker not in df.symbol.unique():
         print('no ticker {}!'.format(ticker))
@@ -51,9 +54,6 @@ for ticker in ['YHOO']: #, 'JPM', 'WU', 'ACN']:
 
     # LOOK BACK
     # =========
-    # reshape into X=t and Y=t+1
-    look_back = 5
-    lag = 2
     X, Y = create_dataset(stock_price, look_back, lag=lag)
 
     # RESHAPE LSTM STYLE

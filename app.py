@@ -8,7 +8,7 @@ app = Flask(__name__)
 def home():
 	return render_template('home.html')
 
-@app.route('/getdelay',methods=['POST','GET'])
+@app.route('/getstockprice',methods=['POST','GET'])
 def get_delay():
     if request.method=='POST':
         result = request.form
@@ -21,23 +21,28 @@ def get_delay():
     from keras.optimizers import Adam
     import pandas as pd
     from sklearn.preprocessing import MinMaxScaler, StandardScaler
-    from utils import create_dataset
+    from utils import create_dataset, load_model_from_disk
     import numpy as np
     from dateutil.relativedelta import relativedelta
     import datetime
 
-    # load json and create model
-    # ==========================
-    json_file = open('model.json', 'r')
-    loaded_model_json = json_file.read()
-    json_file.close()
-    loaded_model = model_from_json(loaded_model_json)
-    # load weights into new model
-    loaded_model.load_weights("model.h5")
-    print("Loaded model from disk")
+    # PARAMETERS
+    # =========
+    look_back = 5  # LSTM lookback
+    lag = 2  # based on yesterday's prices, predict tomorrow's (no info on today's close)
+    learning_rate = 0.0001
 
-    A = Adam(lr=0.0001)
-    loaded_model.compile(loss='mse', optimizer=A)
+    # load network, weights and compile model
+    # =======================================
+    try:
+        loaded_model = load_model_from_disk(model_from_json)
+        A = Adam(lr=learning_rate)
+        loaded_model.compile(loss='mse', optimizer=A)
+
+    except FileNotFoundError:
+        print('no model found!')
+        exit()
+
 
     # get the data
     # ============
@@ -73,9 +78,6 @@ def get_delay():
 
     # LOOK BACK
     # =========
-    # reshape into X=t and Y=t+1
-    look_back = 5
-    lag = 2
     X, Y = create_dataset(stock_price, look_back, lag=lag)
 
     # RESHAPE LSTM STYLE
@@ -92,7 +94,6 @@ def get_delay():
     ts['ticker'] = ticker
     ts['pred'] = scaler.inverse_transform(yhat.ravel())
     ts['actual'] = scaler.inverse_transform(ts['actual'])
-    ts['probability'] = loaded_model.predict_proba([X, ticker_data_feats]) * 100
     ts['date'] = ticker_data[look_back+1:]['date'].values
     ts['error'] = abs(ts['pred'] - ts['actual'])/ts['actual']
     print('RMSE: ', (abs(ts['pred'] - ts['actual'])/ts['actual']).mean() ) #0.032

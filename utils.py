@@ -1,6 +1,12 @@
 # convert an array of values into a dataset matrix
 
 def create_dataset(dataset, look_back=1, lag=1):
+    """
+    :param dataset:
+    :param look_back:
+    :param lag:
+    :return:
+    """
     import numpy as np
     dataX, dataY = [], []
 
@@ -12,6 +18,13 @@ def create_dataset(dataset, look_back=1, lag=1):
 
 
 def create_model(feats, feats2, lookback, lr=0.001):
+    """
+    :param feats: features for LSTM
+    :param feats2: features for MLP
+    :param lookback:
+    :param lr:
+    :return:
+    """
 
     from keras.layers.core import Dense, Activation, Dropout
     from keras.optimizers import Adam
@@ -43,3 +56,45 @@ def create_model(feats, feats2, lookback, lr=0.001):
     print('compilation time : ', time.time() - start)
 
     return model
+
+def output_routine(test, testX, test2, model, scaler, look_back, plt, pd):
+    """
+    :param testX:
+    :param test2:
+    :param model:
+    :return:
+    """
+
+    yhat = model.predict([testX, test2])
+
+    ts = pd.DataFrame(test[look_back+1:], columns=['actual'])
+    ts['pred'] = scaler.inverse_transform(yhat.ravel())
+    ts['actual'] = scaler.inverse_transform(ts['actual'])
+    print('RMSE: ', (abs(ts['pred'] - ts['actual'])/ts['actual']).mean() )
+    plt.plot(ts)
+    ts.to_csv('res_out.csv')
+
+
+def save_model_to_disk(model):
+    """
+    :param model:
+    :return:
+    """
+    # serialize model to JSON
+    model_json = model.to_json()
+    with open("model.json", "w") as json_file:
+        json_file.write(model_json)
+    # serialize weights to HDF5
+    model.save_weights("model.h5")
+    print("Saved model to disk")
+
+
+def load_model_from_disk(model_from_json):
+    json_file = open('model.json', 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    loaded_model = model_from_json(loaded_model_json)
+    # load weights into new model
+    loaded_model.load_weights("model.h5")
+    return loaded_model
+    print("Loaded model from disk")
