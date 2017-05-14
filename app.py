@@ -14,7 +14,9 @@ def get_delay():
         result = request.form
 
     print('request received:', result['TICKER'])
-    # this script takes as input some features and predicts the output
+
+    # LIBRARIES
+    # =========
     from keras.models import model_from_json
     from keras.optimizers import Adam
     import pandas as pd
@@ -80,10 +82,12 @@ def get_delay():
     # ==================
     X = np.reshape(X, (X.shape[0], 1, X.shape[1]))
 
-    # SCORE
+    # PREDICT
     # =====
     yhat = loaded_model.predict([X, ticker_data_feats])
 
+    # OUTPUT DATA
+    # ===========
     ts = pd.DataFrame(stock_price[look_back+1:], columns=['actual'])
     ts['ticker'] = ticker
     ts['pred'] = scaler.inverse_transform(yhat.ravel())

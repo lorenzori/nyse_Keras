@@ -71,15 +71,13 @@ for ticker in ['YHOO']: #, 'JPM', 'WU', 'ACN']:
     ts['probability'] = loaded_model.predict_proba([X, ticker_data_feats]) * 100
     ts['date'] = ticker_data[look_back+1:]['date'].values
     ts['error'] = abs(ts['pred'] - ts['actual'])/ts['actual']
-    print('RMSE: ', (abs(ts['pred'] - ts['actual'])/ts['actual']).mean() ) #0.032
+    print('RMSE: ', (abs(ts['pred'] - ts['actual'])/ts['actual']).mean() )
 
 
     try:
         output = output.append(ts)
     except NameError:
         output = pd.DataFrame(ts)
-
-    output[output.date == '2016-05-16']
 
 output.to_csv('scoring_out.csv', index=False)
 

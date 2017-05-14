@@ -62,6 +62,7 @@ testX = np.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
 model = create_model(1, len(features), look_back, lr=0.0001)
 
 history = model.fit([trainX, train2[look_back+1:]], trainY, batch_size=32, epochs=50, validation_split=0.1, verbose=2)
+model.summary()
 
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
