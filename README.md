@@ -25,3 +25,4 @@ following libraries are required:
 - Flask
 - Datetime
 - Dateutil
+- requests
